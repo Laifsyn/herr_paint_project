@@ -1,109 +1,96 @@
-// Use the re-exported winit dependency to avoid version mismatches.
-// Requires the `simple_window_builder` feature.
-use glium::{
-    Surface, implement_vertex, uniform,
-    winit::{
-        self,
-        application::ApplicationHandler,
-        event::{Event, WindowEvent},
-        window::Window,
-    },
-};
-use impls::impls;
+#[macro_use]
+extern crate glium;
+mod support;
 
-fn main() {
-    // 1. The **winit::EventLoop** for handling events.
-    let event_loop = winit::event_loop::EventLoop::builder().build().unwrap();
-    // 2. Create a glutin context and glium Display
-    let (window, display) = glium::backend::glutin::SimpleWindowBuilder::new().with_title("Hello world").build(&event_loop);
-    const {
-        if impls!(Window: ApplicationHandler ) {
-            panic!();
-        }
-    }
-    let vertex_shader_src = r#"
-
-    in vec2 position;
-
-    uniform float x;
-
-    void main() {
-        vec2 pos = position;
-        pos.x += x;
-        gl_Position = vec4(pos, 0.0, 1.0);
-    }
-"#;
-    let fragment_shader_src = r#"
-out vec4 color;
-
-void main() {
-    color = vec4(1.0, 0.2, 0.0, 0.5);
-}
-"#;
-
-    let (tx, rx) = std::sync::mpsc::channel();
-    let _handle = std::thread::spawn(move || {
-        loop {
-            std::thread::park_timeout(std::time::Duration::from_millis(1000 / 30));
-            println!("Msg sent");
-            tx.send(()).ok();
-        }
-    });
-    let program = glium::Program::from_source(&display, vertex_shader_src, fragment_shader_src, None).unwrap();
-    let indices = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
-
-    let mut t: f32 = 0.0;
-    #[allow(clippy::single_match, deprecated)]
-    let _ = event_loop.run(move |event, window_target| {
-        match event {
-            Event::WindowEvent { event, .. } => {
-                match event {
-                    WindowEvent::CloseRequested => window_target.exit(),
-                    WindowEvent::RedrawRequested => {
-                        // We update `t`
-                        t += 0.01;
-                        // We use the sine of t as an offset, this way we get a
-                        // nice smooth animation
-                        let x_off = t.sin() * 0.5;
-
-                        let shape =
-                            vec![Vertex { position: [-0.5 + x_off, -0.5] }, Vertex { position: [0.0 + x_off, 0.5] }, Vertex {
-                                position: [0.5 + x_off, -0.25],
-                            }];
-
-                        let mut target = display.draw();
-                        target.clear_color(0.5, 0.0, 0.3, 1.0);
-
-                        let vertex_buffer = glium::VertexBuffer::new(&display, &shape).unwrap();
-
-                        target.draw(&vertex_buffer, indices, &program, &uniform! { x: x_off }, &Default::default()).unwrap();
-                        target.finish().unwrap();
-                    }
-                    WindowEvent::Resized(window_size) => {
-                        display.resize(window_size.into());
-                    }
-                    _ => (),
-                }
-            }
-            Event::AboutToWait => {
-                if rx.try_recv().is_ok() {
-                    // We can use this to trigger a redraw
-                    window.request_redraw();
-                    match rx.try_iter().count() {
-                        0 => (),
-                        n => {
-                            println!("Received {} messages", n);
-                        }
-                    };
-                }
-            }
-            _ => (),
-        }
-    });
-}
+use glium::{Display, Surface, index::PrimitiveType};
+use glutin::surface::WindowSurface;
+use support::{ApplicationContext, State};
 
 #[derive(Copy, Clone)]
 struct Vertex {
     position: [f32; 2],
+    color: [f32; 3],
 }
-implement_vertex!(Vertex, position);
+implement_vertex!(Vertex, position, color);
+
+struct Application {
+    pub vertex_buffer: glium::VertexBuffer<Vertex>,
+    pub index_buffer: glium::IndexBuffer<u16>,
+    pub program: glium::Program,
+}
+
+const BLACK: [f32; 3] = [0.0, 0.0, 0.0];
+impl ApplicationContext for Application {
+    const WINDOW_TITLE: &'static str = "Glium triangle example";
+
+    fn new(display: &Display<WindowSurface>) -> Self {
+        let vertex_buffer = {
+            glium::VertexBuffer::new(display, &[
+                Vertex { position: [-0.5, -0.5], color: BLACK },
+                Vertex { position: [0.0, 0.5], color: [0.25, 0.68, 0.24] },
+                Vertex { position: [0.5, -0.5], color: BLACK },
+                Vertex { position: [-0.5, -0.5], color: [1.0, 1.0, 1.0] },
+                Vertex { position: [0.0, 0.5], color: [0.5, 0.5, 0.5] },
+                Vertex { position: [-1.0, 0.0], color: BLACK },
+                // Vertex { position: [0.0, 0.5], color: [0.5, 0.5, 0.24] },
+            ])
+            .unwrap()
+        };
+
+        // building the index buffer
+        let index_buffer = glium::IndexBuffer::new(display, PrimitiveType::LineStrip, &[0u16, 1, 2]).unwrap();
+
+        // compiling shaders and linking them together
+        let program = program!(display,
+            100 => {
+                vertex: "
+                    #version 100
+
+                    uniform lowp mat4 matrix;
+
+                    attribute lowp vec2 position;
+                    attribute lowp vec3 color;
+
+                    varying lowp vec3 vColor;
+
+                    void main() {
+                        gl_Position = vec4(position, 0.0, 1.0) * matrix;
+                        vColor = color;
+                    }
+                ",
+
+                fragment: "
+                    #version 100
+                    varying lowp vec3 vColor;
+
+                    void main() {
+                        gl_FragColor = vec4(vColor, 1.0);
+                    }
+                ",
+            },
+        )
+        .unwrap();
+
+        Self { vertex_buffer, index_buffer, program }
+    }
+
+    fn draw_frame(&mut self, display: &Display<WindowSurface>) {
+        let mut frame = display.draw();
+        // For this example a simple identity matrix suffices
+        let uniforms = uniform! {
+            matrix: [
+                [1.0, 0.0, 0.0, 0.0],
+                [0.0, 1.0, 0.0, 0.0],
+                [0.0, 0.6, 0.2, 0.0],
+                [0.0, 0.0, 0.0, 1.0f32]
+            ]
+        };
+
+        // Now we can draw the triangle
+        frame.clear_color(0.0, 0.2, 0.0, 0.0);
+        frame.draw(&self.vertex_buffer, &self.index_buffer, &self.program, &uniforms, &Default::default()).unwrap();
+        frame.finish().unwrap();
+    }
+}
+
+fn main() { State::<Application>::run_loop(); }
