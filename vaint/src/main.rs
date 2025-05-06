@@ -75,19 +75,22 @@ impl ApplicationContext for Application {
     }
 
     fn draw_frame(&mut self, display: &Display<WindowSurface>) {
-        let mut frame = display.draw();
+        // Obtener el objeto para dibujar a la pantalla
+        let mut frame: glium::Frame = display.draw();
+
         // For this example a simple identity matrix suffices
         let uniforms = uniform! {
             matrix: [
                 [1.0, 0.0, 0.0, 0.0],
                 [0.0, 1.0, 0.0, 0.0],
-                [0.0, 0.6, 0.2, 0.0],
+                [0.0, 0.0, 1.0, 0.0],
                 [0.0, 0.0, 0.0, 1.0f32]
             ]
         };
+        // let uniforms = EmptyUniforms;
 
         // Now we can draw the triangle
-        frame.clear_color(0.0, 0.2, 0.0, 0.0);
+        frame.clear_color(1.0, 1.0, 1.0, 0.0); // Fondo Blanco
         frame.draw(&self.vertex_buffer, &self.index_buffer, &self.program, &uniforms, &Default::default()).unwrap();
         frame.finish().unwrap();
     }
