@@ -2,7 +2,7 @@
 extern crate glium;
 mod support;
 
-use glium::{Display, Surface, index::PrimitiveType};
+use glium::{Display, Surface, index::PrimitiveType, vertex::MultiVerticesSource};
 use glutin::surface::WindowSurface;
 use support::{ApplicationContext, State};
 
@@ -24,21 +24,26 @@ impl ApplicationContext for Application {
     const WINDOW_TITLE: &'static str = "Glium triangle example";
 
     fn new(display: &Display<WindowSurface>) -> Self {
-        let vertex_buffer = {
-            glium::VertexBuffer::new(display, &[
-                Vertex { position: [-0.5, -0.5], color: BLACK },
-                Vertex { position: [0.0, 0.5], color: [0.25, 0.68, 0.24] },
-                Vertex { position: [0.5, -0.5], color: BLACK },
-                Vertex { position: [-0.5, -0.5], color: [1.0, 1.0, 1.0] },
-                Vertex { position: [0.0, 0.5], color: [0.5, 0.5, 0.5] },
-                Vertex { position: [-1.0, 0.0], color: BLACK },
-                // Vertex { position: [0.0, 0.5], color: [0.5, 0.5, 0.24] },
-            ])
-            .unwrap()
-        };
+        let points = &[
+            Vertex { position: [-0.5, -0.5], color: BLACK },
+            Vertex { position: [0.0, 0.5], color: [0.25, 0.68, 0.24] },
+            Vertex { position: [0.5, -0.5], color: BLACK },
+            Vertex { position: [-0.5, -0.5], color: [1.0, 0.6, 0.0] },
+            Vertex { position: [-0.5, 0.0], color: [1.0, 0.6, 0.0] },
+            Vertex { position: [0.0, 0.5], color: [1.0, 0.6, 0.0] },
+        ];
+        let vertex_buffer = { glium::VertexBuffer::new(display, points).unwrap() };
+        static mut INDICES: Vec<u16> = Vec::new();
 
+        #[allow(static_mut_refs)]
+        let static_indices = unsafe { &mut INDICES };
+        let indices = points.iter().enumerate().map(|(idx, _)| idx as u16);
+
+        static_indices.clear();
+        static_indices.extend(indices);
+        println!("Indices: {:?}", static_indices);
         // building the index buffer
-        let index_buffer = glium::IndexBuffer::new(display, PrimitiveType::LineStrip, &[0u16, 1, 2]).unwrap();
+        let index_buffer = glium::IndexBuffer::new(display, PrimitiveType::LineStrip, static_indices).unwrap();
 
         // compiling shaders and linking them together
         let program = program!(display,
