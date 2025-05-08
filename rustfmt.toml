@@ -32,7 +32,7 @@ format_macro_matchers = true       ## Format the metavariable matching patterns 
 ## Wraps string when it overflows max_width
 format_strings = true
 # better grepping
-imports_granularity = "Crate"
+imports_granularity = "Module"
 # quicker manual lookup
 group_imports = "StdExternalCrate"
 # why use an attribute if a normal doc comment would suffice?

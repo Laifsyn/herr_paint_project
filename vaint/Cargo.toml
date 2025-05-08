@@ -3,6 +3,12 @@ name = "vaint"
 version = "0.1.0"
 edition = "2024"
 
+
+[[bin]]
+name = "lab_01"
+[[bin]]
+name = "lab_01_test"
+
 [dependencies]
 glium = "0.36.0"
 glutin = "0.32.2"
@@ -13,4 +19,3 @@ tracing.workspace = true
 tracing-subscriber = { workspace = true, features = ["env-filter"] }
 
 [lints]
-workspace = true
