@@ -8,6 +8,8 @@ edition = "2024"
 name = "lab_01"
 [[bin]]
 name = "lab_01_test"
+[[bin]]
+name = "lab_03_dda"
 
 [dependencies]
 glium = "0.36.0"
