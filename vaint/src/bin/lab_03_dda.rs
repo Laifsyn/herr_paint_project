@@ -141,8 +141,7 @@ mod ventana {
 
     use crate::{Vertex, dda, transformar_coordenadas};
 
-    /// Funcion Auxiliar que dibuja una línea entre dos puntos y aparte dibuja una serie de puntos
-    /// paralela a la línea desplazado según `points_shift`
+    /// Funcion Auxiliar que dibuja una línea entre dos puntos y aparte dibuja una serie de puntos paralela a la línea desplazado por
     fn dibujar_linea(
         display: &glium::Display<WindowSurface>,
         target: &mut glium::Frame,
@@ -165,7 +164,7 @@ mod ventana {
         // Puntos individuales de la línea
         let puntos = dda(p0, p) // Realizamos el algoritmo DDA
             .into_iter()
-            .map(|v| vec_shift(points_shift, v)) // Desplazamos la serie de puntos
+            .map(|v| vec_shift(points_shift, v)) // Desplazamos la línea 50 pixeles a la izquierda
             .map(transformar_coordenadas) // Normalizamos al espacio de coordenadas de OpenGL
             .map(Vertex::new_blue) // Coloreamos los puntos
             .collect::<Vec<_>>(); // Recogemos los puntos a un vector
