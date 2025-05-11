@@ -10,6 +10,8 @@ name = "lab_01"
 name = "lab_01_test"
 [[bin]]
 name = "lab_03_dda"
+[[bin]]
+name = "lab_04_bress"
 
 [dependencies]
 glium = "0.36.0"
