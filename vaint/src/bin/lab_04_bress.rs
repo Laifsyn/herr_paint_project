@@ -1,7 +1,8 @@
-#![allow(unused)]
+#![allow(dead_code)]
+use std::mem;
+
 use glium::index::{NoIndices, PrimitiveType};
 use glium::winit::application::ApplicationHandler;
-use glium::winit::event_loop::EventLoop;
 use glium::{Surface as _, VertexBuffer, implement_vertex};
 use glutin::surface::WindowSurface;
 use utils::ApplicationContext;
@@ -16,23 +17,36 @@ pub struct Vertex {
 }
 implement_vertex!(Vertex, position, color);
 
+/// Estructura que abstrae el manejo de I/O común para la aplicación.
 pub struct App<T: ApplicationContext> {
     display: glium::Display<WindowSurface>,
     window: glium::winit::window::Window,
+    /// Actual implementación principal del laboratorio.
     lab: T,
 }
+/// Estructura que representa el laboratorio 4.
 pub struct Lab4 {
     program: Option<glium::Program>,
 }
-fn main() { App::run_loop(Lab4::new()); }
+
+fn main() {
+    tracing_subscriber::fmt().init();
+    // Saltar a `impl ApplicationContext for Lab4` para ver el código principal del laboratorio.
+    App::run_loop(Lab4::new());
+    tracing::info!("Fin del programa. ADIÓS!");
+}
+
+fn puntos_a_vertices(puntos: Vec<Point>, color: [f32; 3]) -> Vec<Vertex> {
+    puntos.into_iter().map(|(x, y)| Vertex::new([x, y], color)).collect()
+}
 
 impl ApplicationContext for Lab4 {
-    const WINDOW_TITLE: &'static str = "Lab 4";
+    const WINDOW_TITLE: &'static str = "Laboratorio 4 - Algoritmo Bresenham";
 
     /// Método que contiene el código para renderizar un frame.
     fn draw_frame(&mut self, display: &glium::Display<WindowSurface>) {
         let mut target = display.draw();
-        target.clear_color(0.0, 0.0, 0.0, 1.0); // Fondo Negro
+        target.clear_color(0.941, 0.90196, 0.549019, 1.0); // Fondo Khaki
 
         let programa = &*self.program.get_or_insert_with(|| Self::programa(display));
 
@@ -50,59 +64,130 @@ impl ApplicationContext for Lab4 {
 
         let parámetro_dibujo: glium::DrawParameters<'_> =
             glium::draw_parameters::DrawParameters { line_width: Some(1.0), ..Default::default() };
-        let buff = vec![
-            Vertex { position: [0, 0], color: [1.0, 0.0, 0.0] },
-            Vertex { position: [2, 200], color: [0.0, 0.0, 0.1] },
-            Vertex { position: [30, 5], color: [1.0, 0.6, 0.1] },
-        ];
-        let rect = VertexBuffer::new(display, &buff).unwrap();
-        target.draw(&rect, NoIndices(PrimitiveType::LineLoop), programa, &uniforms, &parámetro_dibujo).unwrap();
+
+        let puntos_vertical: Vec<Point> = bresenham((86, 36), (86, 279));
+        let puntos_horizontal: Vec<Point> = bresenham((188, 93), (432, 93));
+        let puntos_diagonal: Vec<Point> = bresenham((630, 58), (458, 230));
+        let puntos_diagonal_invertido: Vec<Point> = bresenham((664, 50), (836, 221));
+
+        let mut puntos = Vec::new();
+        puntos.extend(puntos_vertical);
+        puntos.extend(puntos_horizontal);
+        puntos.extend(puntos_diagonal);
+        puntos.extend(puntos_diagonal_invertido);
+        let puntos: Vec<Vertex> = puntos_a_vertices(puntos, [0.0, 0.0, 1.0]); // Color azul
+
+        let puntos: VertexBuffer<Vertex> = VertexBuffer::new(display, &puntos).unwrap();
+        target.draw(&puntos, NoIndices(PrimitiveType::Points), programa, &uniforms, &parámetro_dibujo).unwrap();
 
         // Finalizamos el dibujo, y flusheamos el buffer para que se vea en pantalla
         target.finish().unwrap(); // `.unwrap()` porque el flushing puede fallar
+        tracing::info!("Fin del dibujo.");
     }
 }
 
-impl Lab4 {
-    fn bresenham(p0: Point, p1: Point) -> Vec<Point> {
-        let mut points = Vec::new();
-        let (x0, y0) = p0;
-        let (x1, y1) = p1;
+/// Algoritmo de Bresenham para dibujar líneas sin usar multiplicación de flotantes.
+fn bresenham(p0: Point, p1: Point) -> Vec<Point> {
+    tracing::trace!("Bresenhan: ({x0}:{y0}) ({x1},{y1})", x0 = p0.0, y0 = p0.1, x1 = p1.0, y1 = p1.1);
+    let (delta_x, delta_y) = ((p1.0 - p0.0), p1.1 - p0.1);
+    tracing::trace!("Delta: (|{delta_x}| >= |{delta_y}|)", delta_x = delta_x, delta_y = delta_y);
+    // Usamos la implementación que nos dará la mayor cantidad de pasos en renderizado
+    if (delta_y).abs() <= (delta_x).abs() { h_bressenham(p0, p1) } else { v_bressenham(p1, p0) }
+}
 
-        let dx = x1 - x0;
-        let dy = y1 - y0;
-        let sx = if dx < 0 { -1 } else { 1 };
-        let sy = if dy < 0 { -1 } else { 1 };
-        let dx = dx.abs();
-        let dy = dy.abs();
-
-        if dx > dy {
-            let mut err = dx / 2;
-            let mut y = y0;
-            for x in (x0..=x1).step_by(sx as usize) {
-                points.push((x, y));
-                err -= dy;
-                if err < 0 {
-                    y += sy;
-                    err += dx;
-                }
-            }
-        } else {
-            let mut err = dy / 2;
-            let mut x = x0;
-            for y in (y0..=y1).step_by(sy as usize) {
-                points.push((x, y));
-                err -= dx;
-                if err < 0 {
-                    x += sx;
-                    err += dy;
-                }
-            }
-        }
-
-        points
+fn v_bressenham((mut x0, mut y0): Point, (mut x1, mut y1): Point) -> Vec<Point> {
+    if y1 < y0 {
+        mem::swap(&mut y0, &mut y1);
+        mem::swap(&mut x0, &mut x1);
     }
 
+    let delta_y: i32 = y1 - y0;
+    let delta_x: i32 = x1 - x0;
+
+    let (x0, y0, _x1, y1, delta_x, delta_y, x_increment): (i32, i32, i32, i32, i32, i32, i32) =
+        (x0, y0, x1, y1, delta_x.abs(), delta_y.abs(), if x0 > x1 { -1 } else { 1 });
+
+    let mut p: i32 = 2 * delta_x - delta_y;
+    let two_dx: i32 = 2 * delta_x;
+    let two_dx_dy: i32 = 2 * (delta_x - delta_y);
+
+    let mut points: Vec<Point> = Vec::new();
+
+    // Coordenadas inicial de la línea
+
+    // let mut y: i32 = i32::min(y0, y1);
+    let mut x = x0;
+    let y1: i32 = i32::max(y0, y1);
+
+    points.push((x, y0));
+    for y in (y0 + 1)..=y1 {
+        if p < 0 {
+            p += two_dx;
+        } else {
+            x += x_increment;
+            p += two_dx_dy;
+        }
+        points.push((x, y));
+    }
+    points
+}
+
+fn h_bressenham((mut x0, mut y0): Point, (mut x1, mut y1): Point) -> Vec<Point> {
+    if x1 < x0 {
+        mem::swap(&mut x0, &mut x1);
+        mem::swap(&mut y0, &mut y1);
+    }
+    let delta_x: i32 = x1 - x0;
+    let delta_y: i32 = y1 - y0;
+
+    let (x0, y0, x1, _y1, delta_x, delta_y, y_increment) =
+        (x0, y0, x1, y1, delta_x.abs(), delta_y.abs(), if y0 < y1 { 1 } else { -1 });
+
+    let mut p: i32 = 2 * delta_y - delta_x;
+    let two_dy: i32 = 2 * delta_y;
+    let two_dy_dx: i32 = 2 * (delta_y - delta_x);
+
+    let mut points: Vec<Point> = Vec::new();
+
+    // Coordenadas inicial de la línea
+
+    // let mut y: i32 = i32::min(y0, y1);
+    let mut y = y0;
+    let x1: i32 = i32::max(x0, x1);
+    points.push((x0, y));
+    for x in (x0 + 1)..=x1 {
+        if p < 0 {
+            p += two_dy;
+        } else {
+            y += y_increment;
+            p += two_dy_dx;
+        }
+        points.push((x, y));
+    }
+    points
+}
+
+pub fn dda((x_0, y_0): (i32, i32), (x, y): (i32, i32)) -> Vec<Point> {
+    let delta_x = x - x_0;
+    let delta_y = y - y_0;
+
+    let steps = i32::max(delta_x.abs(), delta_y.abs());
+
+    let dx = (delta_x as f32) / steps as f32;
+    let dy = (delta_y as f32) / steps as f32;
+
+    let steps = steps + 1; // Se agrega un paso adicional para incluir el último punto
+    let mut puntos = Vec::with_capacity(steps as usize);
+    for k in 0..steps {
+        let k: f32 = k as f32;
+        let x = x_0 + (dx * k).round() as i32; // Type-Casting a entero trunca los decimales.
+        let y = y_0 + (dy * k).round() as i32;
+        puntos.push((x, y));
+    }
+    puntos
+}
+
+impl Lab4 {
     pub fn new() -> Self { Self { program: None } }
 }
 
@@ -174,7 +259,7 @@ impl Default for Lab4 {
 
 impl<T: ApplicationContext> ApplicationHandler for App<T> {
     /// Emitted when the application has been resumed.
-    fn resumed(&mut self, event_loop: &glium::winit::event_loop::ActiveEventLoop) {
+    fn resumed(&mut self, _event_loop: &glium::winit::event_loop::ActiveEventLoop) {
         // Hacer nada
         tracing::debug!("Application resumed!");
     }
@@ -182,7 +267,7 @@ impl<T: ApplicationContext> ApplicationHandler for App<T> {
     fn window_event(
         &mut self,
         event_loop: &glium::winit::event_loop::ActiveEventLoop,
-        window_id: glium::winit::window::WindowId,
+        _window_id: glium::winit::window::WindowId,
         event: glium::winit::event::WindowEvent,
     ) {
         match event {
@@ -192,6 +277,17 @@ impl<T: ApplicationContext> ApplicationHandler for App<T> {
             glium::winit::event::WindowEvent::RedrawRequested => {
                 self.lab.draw_frame(&self.display);
             }
+            // Manejar eventos de cierre de ventana
+            glium::winit::event::WindowEvent::CloseRequested
+            | glium::winit::event::WindowEvent::KeyboardInput {
+                event:
+                    glium::winit::event::KeyEvent {
+                        state: glium::winit::event::ElementState::Pressed,
+                        logical_key: glium::winit::keyboard::Key::Named(glium::winit::keyboard::NamedKey::Escape),
+                        ..
+                    },
+                ..
+            } => event_loop.exit(),
             e => {
                 self.lab.handle_window_event(&e, &self.window);
             }
@@ -207,4 +303,204 @@ impl Vertex {
     pub fn new_green(position: [i32; 2]) -> Self { Vertex::new(position, [0.0, 1.0, 0.0]) }
 
     pub fn new_blue(position: [i32; 2]) -> Self { Vertex::new(position, [0.0, 0.0, 1.0]) }
+}
+
+/// Codigo de Prueba para el test de bressenham
+#[cfg(test)]
+mod test {
+    use core::panic;
+    use std::sync::LazyLock;
+
+    use crate::{Point, bresenham, dda};
+
+    static TRACING: LazyLock<()> = LazyLock::new(|| {
+        let _ = tracing_subscriber::fmt().without_time().with_file(true).with_line_number(true).try_init().ok();
+    });
+
+    #[test]
+    fn bress_360deg() {
+        *TRACING;
+        let p0 = (10, 0);
+        let p1 = (219, 0);
+        let b_points = bresenham(p0, p1);
+        let d_points = dda(p0, p1);
+        compare(b_points, d_points);
+    }
+
+    #[test]
+    fn bress_15deg() {
+        *TRACING;
+        let p0 = (10, 3);
+        let p1 = (208, 56);
+        let b_points = bresenham(p0, p1);
+        let d_points = dda(p0, p1);
+        compare(b_points, d_points);
+    }
+
+    #[test]
+    fn bress_45deg() {
+        *TRACING;
+        let p0 = (10, 0);
+        let p1 = (210, 200);
+        let b_points = bresenham(p0, p1);
+        let d_points = dda(p0, p1);
+        compare(b_points, d_points);
+    }
+
+    #[test]
+    fn bress_60deg() {
+        *TRACING;
+        let p0 = (0, -173);
+        let p1 = (100, 0);
+        let b_points = bresenham(p0, p1);
+        let d_points = dda(p0, p1);
+        compare(b_points, d_points);
+    }
+
+    #[test]
+    fn bress_90deg() {
+        *TRACING;
+        let p0 = (0, 0);
+        let p1 = (0, -200);
+        let b_points = bresenham(p0, p1);
+        let d_points = dda(p0, p1);
+        compare(b_points, d_points);
+    }
+
+    #[test]
+    fn bress_120deg() {
+        *TRACING;
+        let p0 = (100, 0);
+        let p1 = (0, -173);
+        let b_points = bresenham(p0, p1);
+        let d_points = dda(p0, p1);
+        compare(b_points, d_points);
+    }
+
+    #[test]
+    fn bress_165deg() {
+        *TRACING;
+        let p0 = (208, 3);
+        let p1 = (10, 56);
+        let b_points = bresenham(p0, p1);
+        let d_points = dda(p0, p1);
+        compare(b_points, d_points);
+    }
+
+    #[test]
+    fn bress_180deg() {
+        *TRACING;
+        let p0 = (219, 555);
+        let p1 = (10, 555);
+        let b_points = bresenham(p0, p1);
+        let d_points = dda(p0, p1);
+        compare(b_points, d_points);
+    }
+
+    #[test]
+    fn bress_195deg() {
+        *TRACING;
+        let p0 = (208, 3);
+        let p1 = (10, 56);
+        let b_points = bresenham(p0, p1);
+        let d_points = dda(p0, p1);
+        compare(b_points, d_points);
+    }
+
+    #[test]
+    fn bress_225deg() {
+        *TRACING;
+        let p0 = (210, 200);
+        let p1 = (10, 0);
+        let b_points = bresenham(p0, p1);
+        let d_points = dda(p0, p1);
+        compare(b_points, d_points);
+    }
+
+    #[test]
+    fn bress_240deg() {
+        *TRACING;
+        let p0 = (100, 173);
+        let p1 = (0, 0);
+        let b_points = bresenham(p0, p1);
+        let d_points = dda(p0, p1);
+        compare(b_points, d_points);
+    }
+
+    #[test]
+    fn bress_270deg() {
+        *TRACING;
+        let p0 = (0, 200);
+        let p1 = (0, 0);
+        let b_points = bresenham(p0, p1);
+        let d_points = dda(p0, p1);
+        compare(b_points, d_points);
+    }
+
+    #[test]
+    fn bress_300deg() {
+        *TRACING;
+        let p0 = (0, 173);
+        let p1 = (100, 0);
+        let b_points = bresenham(p0, p1);
+        let d_points = dda(p0, p1);
+        compare(b_points, d_points);
+    }
+
+    #[test]
+    fn bress_315deg() {
+        *TRACING;
+        let p0 = (10, 200);
+        let p1 = (210, 0);
+        let b_points = bresenham(p0, p1);
+        let d_points = dda(p0, p1);
+        compare(b_points, d_points);
+    }
+
+    #[test]
+    fn bress_345deg() {
+        *TRACING;
+        let p0 = (10, 56);
+        let p1 = (208, 3);
+        let b_points = bresenham(p0, p1);
+        let d_points = dda(p0, p1);
+        compare(b_points, d_points);
+    }
+    #[track_caller]
+    fn compare(mut a_points: Vec<Point>, mut b_points: Vec<Point>) {
+        let (b, a) = (b_points.last().unwrap(), b_points.first().unwrap());
+        let (x, y) = (b.0 - a.0, b.1 - a.1);
+        tracing::debug!(
+            "Componentes: x:{x:?} y:{y:?}. Angle: {alpha:.2} deg",
+            alpha = f64::atan(y as f64 / x as f64).to_degrees()
+        );
+        a_points.sort();
+        b_points.sort();
+
+        // a_points.sort_by_key(|&(a, b)| (a));
+        // b_points.sort_by_key(|&(a, b)| (a));
+        assert_eq!(a_points.len(), b_points.len(), "Los dos arreglos no tienen la misma longitud");
+        let longest = a_points.len().max(b_points.len());
+        let mut errors = 0;
+        let mut report = Vec::new();
+        for idx in 0..longest {
+            let i = a_points.get(idx);
+            let j = b_points.get(idx);
+            if i != j {
+                report.push(Err(format!("Se esperaba que los puntos fueran iguales: {:?} != {:?}", i, j)));
+                errors += 1;
+            } else {
+                report.push(Ok(format!("Los puntos son iguales: {:?} ", j)));
+            }
+        }
+        if errors > longest * 5 / 100 {
+            for r in report.into_iter() {
+                match r {
+                    Ok(ok) => tracing::info!("{}", ok),
+                    Err(err) => tracing::error!("{}", err),
+                }
+            }
+            panic!("Los puntos no son iguales");
+        }
+    }
 }
