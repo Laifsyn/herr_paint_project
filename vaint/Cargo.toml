@@ -16,6 +16,8 @@ name = "lab_04_bres"
 name = "lab_05_pmc"
 [[bin]]
 name = "lab_05_pmc_2"
+[[bin]]
+name = "lab_06_pme"
 
 [dependencies]
 glium = "0.36.0"
