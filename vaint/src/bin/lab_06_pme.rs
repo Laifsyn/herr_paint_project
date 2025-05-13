@@ -1,4 +1,5 @@
 #![allow(dead_code)]
+use core::f32;
 use std::mem;
 
 use glium::index::{NoIndices, PrimitiveType};
@@ -25,14 +26,14 @@ pub struct App<T: ApplicationContext> {
     lab: T,
 }
 /// Estructura que representa el laboratorio 4.
-pub struct Lab5 {
+pub struct Lab6 {
     program: Option<glium::Program>,
 }
 
 fn main() {
     tracing_subscriber::fmt().init();
     // Saltar a `impl ApplicationContext for Lab4` para ver el código principal del laboratorio.
-    App::run_loop(Lab5::new());
+    App::run_loop(Lab6::new());
     tracing::info!("Fin del programa. ADIÓS!");
 }
 
@@ -40,7 +41,7 @@ fn puntos_a_vertices(puntos: Vec<Point>, color: [f32; 3]) -> Vec<Vertex> {
     puntos.into_iter().map(|(x, y)| Vertex::new([x, y], color)).collect()
 }
 
-impl ApplicationContext for Lab5 {
+impl ApplicationContext for Lab6 {
     const WINDOW_TITLE: &'static str = "Laboratorio 5 - Punto medio de un circulo";
 
     /// Método que contiene el código para renderizar un frame.
@@ -65,7 +66,7 @@ impl ApplicationContext for Lab5 {
         let parámetro_dibujo: glium::DrawParameters<'_> =
             glium::draw_parameters::DrawParameters { point_size: Some(2.0), ..Default::default() };
 
-        let puntos_circulo = circulo_punto_medio((150, 150), 100);
+        let puntos_circulo = elipse_punto_medio((350, 350), 75, 200);
         let circulo_azul = puntos_a_vertices(puntos_circulo, [0.0, 0.0, 1.0]); // azul
         let vertex_buffer = VertexBuffer::new(display, &circulo_azul).unwrap();
 
@@ -94,40 +95,69 @@ impl Circulo {
 }
 
 /// Obtiene los puntos que forman la circunferencia de un círculo
-fn circulo_punto_medio(centro: Point, r: i32) -> Vec<Point> {
+fn elipse_punto_medio(centro: Point, rx: i32, ry: i32) -> Vec<Point> {
     let mut puntos = Vec::new();
+    let (rx2, ry2) = (rx.pow(2), ry.pow(2));
+    let (two_rx2, two_ry2) = (2 * rx2, 2 * ry2);
     let (cx, cy) = centro;
-    let mut c = Circulo::new();
-    c.set_coords((0, r));
-    let mut d = 1 - r;
 
-    let mut plot_circle = |c: &Circulo| {
-        // Se insertan los puntos iniciales para cada octante
+    let round = |arg: f32| -> i32 { (arg + 0.5) as i32 };
+    // Función auxiliar para registrar los puntos de la elipse en el vector
+    let mut plot_elipse = |x: i32, y: i32| {
+        #[rustfmt::skip]
         puntos.extend([
-            (cx + c.x(), cy + c.y()),
-            (cx - c.x(), cy + c.y()),
-            (cx + c.x(), cy - c.y()),
-            (cx - c.x(), cy - c.y()),
-            (cx + c.y(), cy + c.x()),
-            (cx - c.y(), cy + c.x()),
-            (cx + c.y(), cy - c.x()),
-            (cx - c.y(), cy - c.x()),
+            (cx + x, cy + y),
+            (cx - x, cy + y),
+            (cx + x, cy - y),
+            (cx - x, cy - y),
         ]);
     };
 
-    plot_circle(&c);
-    let mut circulo = c;
-    while circulo.x() < circulo.y() {
-        *circulo.x_mut() += 1;
-        if d < 0 {
-            d += 2 * circulo.x() + 1;
+    let (mut x, mut y) = (0, ry);
+
+    plot_elipse(x, y);
+
+    let (mut px, mut py) = (0, two_rx2 * y);
+    let mut p = round(ry2 as f32 - (rx2 * y) as f32 + (0.25 * rx2 as f32));
+
+    // Región 1
+    while px < py {
+        x += 1;
+        px += two_ry2;
+        if p < 0 {
+            p += ry2 + px;
         } else {
-            *circulo.y_mut() -= 1;
-            d += 2 * (circulo.x() - circulo.y()) + 1;
+            y -= 1;
+            py -= two_rx2;
+            p += ry2 + px - py;
         }
-        plot_circle(&circulo);
+        plot_elipse(x, y);
     }
 
+    // Región 2
+    tracing::info!("\nx: {x}\ny: {y}\nrx2: {rx2}\nry2: {ry2}");
+    p = {
+        let (ry2, rx2, x, y) = (ry2 as f32, rx2 as f32, x as f32, y as f32);
+        round(ry2 * (x + 0.5).powi(2) + rx2 * (y - 1.0).powi(2) - rx2 * ry2)
+    };
+
+    while y > 0 {
+        y -= 1;
+        py -= two_rx2;
+        if p > 0 {
+            p += rx2 - py;
+        } else {
+            x += 1;
+            px += two_ry2;
+            p += rx2 - py + px;
+        }
+        plot_elipse(x, y);
+    }
+
+    let (x0, x) = (puntos.iter().min_by_key(|s| s.0).unwrap().0, puntos.iter().max_by_key(|s| s.0).unwrap().0);
+    let (y0, y) = (puntos.iter().min_by_key(|s| s.1).unwrap().1, puntos.iter().max_by_key(|s| s.1).unwrap().1);
+
+    tracing::debug!("x:{{{x0}..={x}}}, y:{{{y0}..={y}}}",);
     puntos
 }
 
@@ -232,7 +262,7 @@ pub fn dda((x_0, y_0): (i32, i32), (x, y): (i32, i32)) -> Vec<Point> {
     puntos
 }
 
-impl Lab5 {
+impl Lab6 {
     pub fn new() -> Self { Self { program: None } }
 }
 
@@ -298,7 +328,7 @@ mod utils {
     }
 }
 
-impl Default for Lab5 {
+impl Default for Lab6 {
     fn default() -> Self { Self::new() }
 }
 
