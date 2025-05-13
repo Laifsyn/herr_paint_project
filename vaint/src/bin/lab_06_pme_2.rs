@@ -66,9 +66,20 @@ impl ApplicationContext for Lab6 {
         let parámetro_dibujo: glium::DrawParameters<'_> =
             glium::draw_parameters::DrawParameters { point_size: Some(2.0), ..Default::default() };
 
-        let puntos_circulo = elipse_punto_medio((350, 350), 75, 200);
-        let circulo_azul = puntos_a_vertices(puntos_circulo, [0.0, 0.0, 1.0]); // azul
-        let vertex_buffer = VertexBuffer::new(display, &circulo_azul).unwrap();
+        const CRIMSON: [f32; 3] = [220.0 / 255.0, 20.0 / 255.0, 60.0 / 255.0];
+        const PURPURA: [f32; 3] = [56.0 / 255.0, 29.0 / 255.0, 42.0 / 255.0];
+        const LAZULI: [f32; 3] = [62.0 / 255.0, 105.0 / 255.0, 144.0 / 255.0];
+        const LILA: [f32; 3] = [203.0 / 255.0, 186.0 / 255.0, 237.0 / 255.0];
+        let puntos_a = elipse_punto_medio((350, 350), 75, 200)
+            .into_iter()
+            .map(|(x, y)| if y > 350 { Vertex::new([x, y], CRIMSON) } else { Vertex::new([x, y], PURPURA) });
+        let puntos_b = elipse_punto_medio((650, 350), 75, 200)
+            .into_iter()
+            .map(|(x, y)| if y > 350 { Vertex::new([x, y], LAZULI) } else { Vertex::new([x, y], LILA) })
+            .chain(puntos_a);
+
+        let elipse_sinoidal: Vec<Vertex> = puntos_b.collect();
+        let vertex_buffer = VertexBuffer::new(display, &elipse_sinoidal).unwrap();
 
         target.draw(&vertex_buffer, NoIndices(PrimitiveType::Points), programa, &uniforms, &parámetro_dibujo).unwrap();
 
@@ -104,12 +115,13 @@ fn elipse_punto_medio(centro: Point, rx: i32, ry: i32) -> Vec<Point> {
     let round = |arg: f32| -> i32 { (arg + 0.5) as i32 };
     // Función auxiliar para registrar los puntos de la elipse en el vector
     let mut plot_elipse = |x: i32, y: i32| {
+        // FIXME: Deshacer la traslación.
         #[rustfmt::skip]
         puntos.extend([
             (cx + x, cy + y),
             (cx - x, cy + y),
-            (cx + x, cy - y),
-            (cx - x, cy - y),
+            (cx + x + 2 * rx, cy - y),
+            (cx - x + 2 * rx, cy - y),
         ]);
     };
 
@@ -154,7 +166,6 @@ fn elipse_punto_medio(centro: Point, rx: i32, ry: i32) -> Vec<Point> {
         plot_elipse(x, y);
     }
 
-    let (x0, x) = (puntos.iter().min_by_key(|s| s.0).unwrap().0, puntos.iter().max_by_key(|s| s.0).unwrap().0);
     puntos
 }
 
