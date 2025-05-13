@@ -25,14 +25,14 @@ pub struct App<T: ApplicationContext> {
     lab: T,
 }
 /// Estructura que representa el laboratorio 4.
-pub struct Lab4 {
+pub struct Lab5 {
     program: Option<glium::Program>,
 }
 
 fn main() {
     tracing_subscriber::fmt().init();
     // Saltar a `impl ApplicationContext for Lab4` para ver el código principal del laboratorio.
-    App::run_loop(Lab4::new());
+    App::run_loop(Lab5::new());
     tracing::info!("Fin del programa. ADIÓS!");
 }
 
@@ -40,7 +40,7 @@ fn puntos_a_vertices(puntos: Vec<Point>, color: [f32; 3]) -> Vec<Vertex> {
     puntos.into_iter().map(|(x, y)| Vertex::new([x, y], color)).collect()
 }
 
-impl ApplicationContext for Lab4 {
+impl ApplicationContext for Lab5 {
     const WINDOW_TITLE: &'static str = "Laboratorio 5 - Punto medio de un circulo";
 
     /// Método que contiene el código para renderizar un frame.
@@ -232,7 +232,7 @@ pub fn dda((x_0, y_0): (i32, i32), (x, y): (i32, i32)) -> Vec<Point> {
     puntos
 }
 
-impl Lab4 {
+impl Lab5 {
     pub fn new() -> Self { Self { program: None } }
 }
 
@@ -298,7 +298,7 @@ mod utils {
     }
 }
 
-impl Default for Lab4 {
+impl Default for Lab5 {
     fn default() -> Self { Self::new() }
 }
 
