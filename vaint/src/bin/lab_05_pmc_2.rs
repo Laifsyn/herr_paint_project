@@ -25,14 +25,14 @@ pub struct App<T: ApplicationContext> {
     lab: T,
 }
 /// Estructura que representa el laboratorio 4.
-pub struct Lab4 {
+pub struct Lab5 {
     program: Option<glium::Program>,
 }
 
 fn main() {
     tracing_subscriber::fmt().init();
     // Saltar a `impl ApplicationContext for Lab4` para ver el código principal del laboratorio.
-    App::run_loop(Lab4::new());
+    App::run_loop(Lab5::new());
     tracing::info!("Fin del programa. ADIÓS!");
 }
 
@@ -40,7 +40,7 @@ fn puntos_a_vertices(puntos: Vec<Point>, color: [f32; 3]) -> Vec<Vertex> {
     puntos.into_iter().map(|(x, y)| Vertex::new([x, y], color)).collect()
 }
 
-impl ApplicationContext for Lab4 {
+impl ApplicationContext for Lab5 {
     const WINDOW_TITLE: &'static str = "Laboratorio 5 - Punto medio de un circulo";
 
     /// Método que contiene el código para renderizar un frame.
@@ -64,10 +64,24 @@ impl ApplicationContext for Lab4 {
 
         let parámetro_dibujo: glium::DrawParameters<'_> =
             glium::draw_parameters::DrawParameters { point_size: Some(2.0), ..Default::default() };
+        const CRIMSON: [f32; 3] = [220.0 / 255.0, 20.0 / 255.0, 60.0 / 255.0];
+        const PURPURA: [f32; 3] = [56.0 / 255.0, 29.0 / 255.0, 42.0 / 255.0];
+        const LAZULI: [f32; 3] = [62.0 / 255.0, 105.0 / 255.0, 144.0 / 255.0];
+        const LILA: [f32; 3] = [203.0 / 255.0, 186.0 / 255.0, 237.0 / 255.0];
+        let puntos_circulo_a = circulo_punto_medio((150, 150), 100)
+            .into_iter()
+            .map(|(x, y)| if y >= 150 { Vertex::new([x, y], CRIMSON) } else { Vertex::new([x, y], PURPURA) });
+        let puntos_circulo_b = circulo_punto_medio((550, 150), 100)
+            .into_iter()
+            .map(|(x, y)| if y >= 150 { Vertex::new([x, y], LAZULI) } else { Vertex::new([x, y], LILA) })
+            .chain(puntos_circulo_a);
+        let puntos_circulo_c = circulo_punto_medio((950, 150), 100)
+            .into_iter()
+            .map(|(x, y)| if y >= 150 { Vertex::new([x, y], PURPURA) } else { Vertex::new([x, y], LAZULI) })
+            .chain(puntos_circulo_b);
 
-        let puntos_circulo = circulo_punto_medio((150, 150), 100);
-        let circulo_azul = puntos_a_vertices(puntos_circulo, [0.0, 0.0, 1.0]); // azul
-        let vertex_buffer = VertexBuffer::new(display, &circulo_azul).unwrap();
+        let circulos: Vec<Vertex> = puntos_circulo_c.collect();
+        let vertex_buffer = VertexBuffer::new(display, &circulos).unwrap();
 
         target.draw(&vertex_buffer, NoIndices(PrimitiveType::Points), programa, &uniforms, &parámetro_dibujo).unwrap();
 
@@ -106,12 +120,12 @@ fn circulo_punto_medio(centro: Point, r: i32) -> Vec<Point> {
         puntos.extend([
             (cx + c.x(), cy + c.y()),
             (cx - c.x(), cy + c.y()),
-            (cx + c.x(), cy - c.y()),
-            (cx - c.x(), cy - c.y()),
+            (cx + 2 * r + c.x(), cy - c.y()),
+            (cx + 2 * r - c.x(), cy - c.y()),
             (cx + c.y(), cy + c.x()),
             (cx - c.y(), cy + c.x()),
-            (cx + c.y(), cy - c.x()),
-            (cx - c.y(), cy - c.x()),
+            (cx + 2 * r + c.y(), cy - c.x()),
+            (cx + 2 * r - c.y(), cy - c.x()),
         ]);
     };
 
@@ -232,7 +246,7 @@ pub fn dda((x_0, y_0): (i32, i32), (x, y): (i32, i32)) -> Vec<Point> {
     puntos
 }
 
-impl Lab4 {
+impl Lab5 {
     pub fn new() -> Self { Self { program: None } }
 }
 
@@ -298,7 +312,7 @@ mod utils {
     }
 }
 
-impl Default for Lab4 {
+impl Default for Lab5 {
     fn default() -> Self { Self::new() }
 }
 
