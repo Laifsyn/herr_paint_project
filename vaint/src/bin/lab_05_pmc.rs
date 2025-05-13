@@ -41,7 +41,7 @@ fn puntos_a_vertices(puntos: Vec<Point>, color: [f32; 3]) -> Vec<Vertex> {
 }
 
 impl ApplicationContext for Lab4 {
-    const WINDOW_TITLE: &'static str = "Laboratorio 4 - Algoritmo Bresenham";
+    const WINDOW_TITLE: &'static str = "Laboratorio 5 - Punto medio de un circulo";
 
     /// Método que contiene el código para renderizar un frame.
     fn draw_frame(&mut self, display: &glium::Display<WindowSurface>) {
@@ -63,27 +63,72 @@ impl ApplicationContext for Lab4 {
         };
 
         let parámetro_dibujo: glium::DrawParameters<'_> =
-            glium::draw_parameters::DrawParameters { line_width: Some(1.0), ..Default::default() };
+            glium::draw_parameters::DrawParameters { point_size: Some(2.0), ..Default::default() };
 
-        let puntos_vertical: Vec<Point> = bresenham((86, 36), (86, 279));
-        let puntos_horizontal: Vec<Point> = bresenham((188, 93), (432, 93));
-        let puntos_diagonal: Vec<Point> = bresenham((630, 58), (458, 230));
-        let puntos_diagonal_invertido: Vec<Point> = bresenham((664, 50), (836, 221));
+        let puntos_circulo = circulo_punto_medio((150, 150), 100);
+        let circulo_azul = puntos_a_vertices(puntos_circulo, [0.0, 0.0, 1.0]); // azul
+        let vertex_buffer = VertexBuffer::new(display, &circulo_azul).unwrap();
 
-        let mut puntos = Vec::new();
-        puntos.extend(puntos_vertical);
-        puntos.extend(puntos_horizontal);
-        puntos.extend(puntos_diagonal);
-        puntos.extend(puntos_diagonal_invertido);
-        let puntos: Vec<Vertex> = puntos_a_vertices(puntos, [0.0, 0.0, 1.0]); // Color azul
-
-        let puntos: VertexBuffer<Vertex> = VertexBuffer::new(display, &puntos).unwrap();
-        target.draw(&puntos, NoIndices(PrimitiveType::Points), programa, &uniforms, &parámetro_dibujo).unwrap();
+        target.draw(&vertex_buffer, NoIndices(PrimitiveType::Points), programa, &uniforms, &parámetro_dibujo).unwrap();
 
         // Finalizamos el dibujo, y flusheamos el buffer para que se vea en pantalla
         target.finish().unwrap(); // `.unwrap()` porque el flushing puede fallar
         tracing::info!("Fin del dibujo.");
     }
+}
+
+pub struct Circulo(Point);
+impl Circulo {
+    #[allow(clippy::new_without_default)]
+    pub fn new() -> Self { Self((0, 0)) }
+
+    pub fn x(&self) -> i32 { self.0.0 }
+
+    pub fn y(&self) -> i32 { self.0.1 }
+
+    pub fn set_coords(&mut self, p: Point) { self.0 = p; }
+
+    pub fn x_mut(&mut self) -> &mut i32 { &mut self.0.0 }
+
+    pub fn y_mut(&mut self) -> &mut i32 { &mut self.0.1 }
+}
+
+/// Obtiene los puntos que forman la circunferencia de un círculo
+fn circulo_punto_medio(centro: Point, r: i32) -> Vec<Point> {
+    let mut puntos = Vec::new();
+    let (cx, cy) = centro;
+    let mut c = Circulo::new();
+    c.set_coords((0, r));
+    let mut d = 1 - r;
+
+    let mut plot_circle = |c: &Circulo| {
+        // Se insertan los puntos iniciales para cada octante
+        puntos.extend([
+            (cx + c.x(), cy + c.y()),
+            (cx - c.x(), cy + c.y()),
+            (cx + c.x(), cy - c.y()),
+            (cx - c.x(), cy - c.y()),
+            (cx + c.y(), cy + c.x()),
+            (cx - c.y(), cy + c.x()),
+            (cx + c.y(), cy - c.x()),
+            (cx - c.y(), cy - c.x()),
+        ]);
+    };
+
+    plot_circle(&c);
+    let mut circulo = c;
+    while circulo.x() < circulo.y() {
+        *circulo.x_mut() += 1;
+        if d < 0 {
+            d += 2 * circulo.x() + 1;
+        } else {
+            *circulo.y_mut() -= 1;
+            d += 2 * (circulo.x() - circulo.y()) + 1;
+        }
+        plot_circle(&circulo);
+    }
+
+    puntos
 }
 
 /// Algoritmo de Bresenham para dibujar líneas sin usar multiplicación de flotantes.
