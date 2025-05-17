@@ -1,7 +1,9 @@
-pub mod app_handler;
-#[path = "util/fill.rs"]
-mod fill;
-mod support;
+pub use geometries::{Shape, ShapeStyle};
+pub use opengl::{Color, PixelCoord, Vertex};
+
+#[path = "util/algorithms.rs"]
+pub mod algorithms;
+pub mod geometries;
+mod opengl;
 #[path = "util/tracing.rs"]
 mod tracing;
-pub use tracing::init;

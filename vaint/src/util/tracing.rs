@@ -1,4 +1,6 @@
-/// Function to initialize a specific tracing subscriber for the application.
+//! Utilidades para el logging de la aplicación.
+
+/// Inicializa el logging de la aplicación.
 pub fn init() {
     use tracing_subscriber::filter::{EnvFilter, LevelFilter};
 
