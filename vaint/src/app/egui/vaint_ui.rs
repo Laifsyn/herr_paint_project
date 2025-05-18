@@ -1,13 +1,13 @@
 use eframe::egui::{self, Color32, Label, RichText, Slider, SliderClamping};
 
-use super::shape::DrawableShape;
+use super::shape::ShapeObject;
 use super::states::{SelectedItem, SliderEditor};
 use crate::Color;
 
 /// Interfaz para recibir entrada de usuario.
 pub struct VaintUI {
     /// Lista de figuras ([`Shape`](crate::Shape)) dibujados en la ventana.
-    pub shapes: Vec<DrawableShape>,
+    pub shapes: Vec<ShapeObject>,
     /// Indica el ítem seleccionado por [VaintUI::shapes]
     pub selected_item: SelectedItem,
     /// Describe el objeto que el slider está editando el color.
