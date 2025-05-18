@@ -1,6 +1,8 @@
+use eframe::egui::{self, Color32};
+
 /// Representación de un color RGB-8bits.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Color([u8; 3]);
+pub struct Color(pub [u8; 3]);
 
 impl Color {
     pub const BLACK: Color = Color::from_u32_rgb(0x333333);
@@ -30,6 +32,9 @@ impl Color {
         Color([r, g, b])
     }
 
+    /// Convierte un set de valores RGB a un color RGB-8bits.
+    pub const fn from_rgb(r: u8, g: u8, b: u8) -> Self { Color([r, g, b]) }
+
     /// Convierte los valores a un formato RGB basado en flotante.
     pub const fn to_vec(&self) -> [f32; 3] {
         let Color([r, g, b]) = *self;
@@ -37,6 +42,23 @@ impl Color {
         let g = g as f32 / 255.0;
         let b = b as f32 / 255.0;
         [r, g, b]
+    }
+
+    pub fn update_red(&mut self, value: u8) { self.0[0] = value; }
+
+    pub fn update_green(&mut self, value: u8) { self.0[1] = value; }
+
+    pub fn update_blue(&mut self, value: u8) { self.0[2] = value; }
+
+    pub fn as_mut_slice(&mut self) -> &mut [u8; 3] { &mut self.0 }
+
+    pub fn as_slice(&self) -> &[u8; 3] { &self.0 }
+}
+
+impl From<Color> for egui::Color32 {
+    fn from(value: Color) -> Self {
+        let [r, g, b] = value.0;
+        Color32::from_rgb(r, g, b)
     }
 }
 
