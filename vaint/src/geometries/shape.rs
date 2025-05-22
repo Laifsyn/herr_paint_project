@@ -45,6 +45,7 @@ impl ShapeObject {
         Self::new(rectangle, center)
     }
 
+    /// Obtiene una referencia editable al estilo de la figura.
     pub fn style_mut(&mut self) -> &mut crate::ShapeStyle {
         match &mut self.shape {
             DrawableShape::Square(s) => &mut s.style,
