@@ -10,8 +10,8 @@ pub type Rgb = [f32; 3];
 /// Representación de un vértice en el programa.
 #[derive(Copy, Clone)]
 pub struct Vertex {
-    position: [i32; 2],
-    color: Rgb,
+    pub position: [i32; 2],
+    pub color: Rgb,
 }
 implement_vertex!(Vertex, position, color);
 

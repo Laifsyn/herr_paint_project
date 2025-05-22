@@ -3,7 +3,7 @@ use crate::{PixelCoord, Shape};
 
 /// Estructura que describe un Objeto 2D dibujable. Incluye información sobre us posición.
 pub struct ShapeObject {
-    pub shape: DrawableShape,
+    shape: DrawableShape,
     pub center: PixelCoord,
 }
 
@@ -13,7 +13,7 @@ impl ShapeObject {
     /// # Debug Assertions
     ///
     /// Causa un pánico si el centro del objeto está fuera del rango de [i32].
-    pub fn new<T: Into<DrawableShape>>(shape: T, center: PixelCoord) -> Self {
+    fn new<T: Into<DrawableShape>>(shape: T, center: PixelCoord) -> Self {
         debug_assert!(center.0 < i32::MAX, "El centro del objeto está fuera del rango de i32");
         debug_assert!(center.1 < i32::MAX, "El centro del objeto está fuera del rango de i32");
         Self { shape: shape.into(), center }
@@ -43,6 +43,15 @@ impl ShapeObject {
     pub fn new_rectangle(width: u32, height: u32, center: PixelCoord) -> Self {
         let rectangle = Square::new(width, height);
         Self::new(rectangle, center)
+    }
+
+    pub fn style_mut(&mut self) -> &mut crate::ShapeStyle {
+        match &mut self.shape {
+            DrawableShape::Square(s) => &mut s.style,
+            DrawableShape::Circle(s) => &mut s.style,
+            DrawableShape::Ellipse(s) => &mut s.style,
+            DrawableShape::Rectangle(s) => &mut s.style,
+        }
     }
 }
 

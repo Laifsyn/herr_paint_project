@@ -1,8 +1,7 @@
 use eframe::egui::{self, Color32, Label, RichText, Slider, SliderClamping};
 
-use super::shape::ShapeObject;
 use super::states::{SelectedItem, SliderEditor};
-use crate::Color;
+use crate::{Color, ShapeObject};
 
 /// Interfaz para recibir entrada de usuario.
 pub struct VaintUI {

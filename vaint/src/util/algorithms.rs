@@ -134,7 +134,6 @@ pub fn write_ellipse_middle_point(centro: PixelCoord, rx: i32, ry: i32, puntos: 
     }
 
     // Región 2
-    tracing::info!("\nx: {x}\ny: {y}\nrx2: {rx2}\nry2: {ry2}");
     p = {
         let (ry2, rx2, x, y) = (ry2 as f32, rx2 as f32, x as f32, y as f32);
         round(ry2 * (x + 0.5).powi(2) + rx2 * (y - 1.0).powi(2) - rx2 * ry2)

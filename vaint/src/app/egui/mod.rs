@@ -1,6 +1,5 @@
 pub use vaint_ui::VaintUI;
 
-mod shape;
 mod states;
 mod vaint_ui;
 

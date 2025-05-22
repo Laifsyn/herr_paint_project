@@ -3,7 +3,7 @@ use crate::{PixelCoord, Shape};
 pub struct Square {
     width: u32,
     height: u32,
-    style: ShapeStyle,
+    pub style: ShapeStyle,
 }
 impl Square {
     /// Crea un nuevo cuadrado con el ancho y alto dados.
@@ -12,17 +12,20 @@ impl Square {
     ///
     /// Causa un pánico si los argumentos de anchura o altura saturan el espacio de [i32].
     pub fn new(width: u32, height: u32) -> Self {
-        debug_assert!(width > i32::MAX as u32, "El ancho del cuadrado es demasiado grande");
-        debug_assert!(height > i32::MAX as u32, "El alto del cuadrado es demasiado grande");
+        debug_assert!(width < i32::MAX as u32, "El ancho del cuadrado es demasiado grande");
+        debug_assert!(height < i32::MAX as u32, "El alto del cuadrado es demasiado grande");
         Self { width, height, style: ShapeStyle::new() }
     }
+
+    /// Lee los campos del objeto, y los devuelve como una tupla de (ancho, alto, estilo).
+    pub fn read_fields(&self) -> (u32, u32, ShapeStyle) { (self.width, self.height, self.style) }
 
     /// Modifica el estilo del cuadrado.
     pub fn style(self, style: ShapeStyle) -> Self { Self { style, ..self } }
 }
 
 impl Shape for Square {
-    fn write_outline_points(&self, buf: &mut Vec<crate::PixelCoord>, center: PixelCoord) {
+    fn write_outline_points_at(&self, buf: &mut Vec<crate::PixelCoord>, center: PixelCoord) {
         let (x0, y0) = center;
 
         let reserve_size = (self.width * 2 + 1) as usize + (self.height * 2 + 1) as usize;

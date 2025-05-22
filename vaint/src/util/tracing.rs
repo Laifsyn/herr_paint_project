@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 //! Utilidades para el logging de la aplicación.
 
 /// Inicializa el logging de la aplicación.

@@ -3,7 +3,7 @@ use crate::PixelCoord;
 
 pub struct Circle {
     radius: u32,
-    style: ShapeStyle,
+    pub style: ShapeStyle,
 }
 impl Circle {
     /// Crea un nuevo círculo con el radio dado.
@@ -12,7 +12,7 @@ impl Circle {
     ///
     /// Entra en pánico si el radio satura el espacio de [i32].
     pub fn new(radius: u32) -> Self {
-        assert!(radius > i32::MAX as u32, "El radio del círculo es demasiado grande");
+        assert!(radius < i32::MAX as u32, "El radio del círculo (`{radius}`) es demasiado grande");
         Self { radius, style: ShapeStyle::new() }
     }
 
@@ -27,7 +27,7 @@ impl Shape for Circle {
     /// # Debug Assertions
     ///
     /// Causa un pánico si los argumentos saturan el espacio de [i32].
-    fn write_outline_points(&self, buf: &mut Vec<crate::PixelCoord>, center: PixelCoord) {
+    fn write_outline_points_at(&self, buf: &mut Vec<crate::PixelCoord>, center: PixelCoord) {
         debug_assert!(self.radius < i32::MAX as u32, "El radio del círculo es demasiado grande");
         crate::algorithms::write_circle_middle_point(center, self.radius as i32, buf);
     }
@@ -39,7 +39,7 @@ impl Shape for Circle {
 pub struct Ellipse {
     radius_x: u32,
     radius_y: u32,
-    style: ShapeStyle,
+    pub style: ShapeStyle,
 }
 
 impl Ellipse {
@@ -49,7 +49,7 @@ impl Ellipse {
     ///
     /// Causa un pánico si los argumentos saturan el espacio de [i32].
     pub fn new(radius_x: u32, radius_y: u32) -> Result<Self, Circle> {
-        debug_assert!(radius_x > i32::MAX as u32 && radius_y > i32::MAX as u32, "Los radios deben ser mayores que cero");
+        debug_assert!(radius_x < i32::MAX as u32 && radius_y < i32::MAX as u32, "Los radios son demasiado grandes");
 
         match radius_x == radius_y {
             // Si los radios son iguales, se crea un círculo
@@ -70,10 +70,10 @@ impl Shape for Ellipse {
     ///
     /// Cuando las aserciones de depuración stán ehabilitadas, se verifica que los radios del elipse
     /// no sean muy grande.
-    fn write_outline_points(&self, buf: &mut Vec<crate::PixelCoord>, center: PixelCoord) {
+    fn write_outline_points_at(&self, buf: &mut Vec<crate::PixelCoord>, center: PixelCoord) {
         debug_assert!(self.radius_x < i32::MAX as u32, "El radio del círculo es demasiado grande");
         debug_assert!(self.radius_y < i32::MAX as u32, "El radio del círculo es demasiado grande");
-        crate::algorithms::write_circle_middle_point(center, self.radius_x as i32, buf);
+        crate::algorithms::write_ellipse_middle_point(center, self.radius_x as i32, self.radius_y as i32, buf);
     }
 
     fn style(&self) -> &ShapeStyle { &self.style }

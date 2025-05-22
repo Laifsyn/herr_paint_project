@@ -1,7 +1,9 @@
 //! Figuras geométricas 2D
 mod circle;
+mod shape;
 mod square;
 pub use circle::{Circle, Ellipse};
+pub use shape::ShapeObject;
 pub use square::Square;
 
 use crate::{Color, PixelCoord, Vertex};
@@ -47,34 +49,48 @@ impl Default for ShapeStyle {
 /// Define como una figura geométrica es representable en un espacio 2D.
 pub trait Shape {
     /// Escribe al buffer dado los puntos que forman el contorno del objeto.
-    fn write_outline_points(&self, buf: &mut Vec<PixelCoord>, center: PixelCoord);
+    fn write_outline_points_at(&self, buf: &mut Vec<PixelCoord>, center: PixelCoord);
 
     /// Computa las coordenadas de los puntos que forman el contorno del objeto, y los devuelve como
     /// un vector.
     fn to_outline_points(&self, center: PixelCoord) -> Vec<(i32, i32)> {
         let mut points = Vec::new();
-        self.write_outline_points(&mut points, center);
+        self.write_outline_points_at(&mut points, center);
         points
+    }
+
+    /// Escribe al buffer dado los puntos que forman el contorno del objeto, centrado en el origen.
+    ///
+    /// # Nota
+    ///
+    /// Por defecto utiliza [`Shape::write_outline_points_at`] con el centro en (0, 0).
+    fn write_outline_points(&self, buf: &mut Vec<PixelCoord>) {
+        let center = (0, 0);
+        self.write_outline_points_at(buf, center);
     }
 
     /// Devuelve el estilo de la figura.
     fn style(&self) -> &ShapeStyle;
 
     #[inline]
-    /// Convierte el vector de coordenadas de píxeles a un vector de vértices.
-    ///
-    /// # NOTA:
-    ///
-    /// Si el estilo de la figura es transparente, no se generan vértices.
-    fn points_to_vertex(&self, points: Vec<PixelCoord>) -> Vec<Vertex> {
+    /// Escribe al buffer dado los Vértices coloreados según el estilo definido por
+    /// [`Shape::style`].
+    fn points_to_vertex(&self, points: &[PixelCoord], buf: &mut Vec<Vertex>) -> usize {
         if self.style().is_transparent() {
-            return Vec::new();
+            return 0;
         }
         let Some(color) = self.style().stroke_color else {
             unreachable!("We already checked for transparency");
         };
 
-        points.into_iter().map(|(x, y)| Vertex::new([x, y], color)).collect::<Vec<_>>()
+        let mut writes = 0;
+        let iter = points.iter().map(|&(x, y)| {
+            writes += 1;
+            Vertex::new([x, y], color)
+        });
+        buf.extend(iter);
+
+        writes
     }
 
     /// Escribe al buffer dado los puntos que forman el relleno del objeto.

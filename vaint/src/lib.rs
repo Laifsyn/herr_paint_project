@@ -1,4 +1,5 @@
-pub use geometries::{Shape, ShapeStyle};
+pub use geometries::{Shape, ShapeObject, ShapeStyle};
+pub use glium_app::{GlShapeList, GlWindow};
 pub use opengl::{Color, PixelCoord, Vertex};
 
 #[path = "util/algorithms.rs"]
