@@ -12,4 +12,4 @@ pub mod glium_app;
 
 mod opengl;
 #[path = "util/tracing.rs"]
-mod tracing;
+pub mod tracing;

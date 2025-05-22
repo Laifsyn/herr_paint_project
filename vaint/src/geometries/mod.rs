@@ -92,10 +92,4 @@ pub trait Shape {
 
         writes
     }
-
-    /// Escribe al buffer dado los puntos que forman el relleno del objeto.
-    fn flood_fill(&self, outline_points: &[PixelCoord], buf: &mut Vec<PixelCoord>) {
-        let _ = (outline_points, buf); // Silenciar advertencias de variables no utilizadas
-        unimplemented!("Flood fill not implemented for this shape yet");
-    }
 }

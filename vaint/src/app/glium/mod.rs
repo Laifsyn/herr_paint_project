@@ -11,13 +11,6 @@ mod gl_window;
 pub type GlShapeList = Vec<ShapeObject>;
 
 pub fn run_loop_standalone() {
-    tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::INFO)
-        .without_time()
-        .with_target(false)
-        .with_file(true)
-        .with_line_number(true)
-        .init();
     let event_loop = glium::winit::event_loop::EventLoop::new().unwrap();
 
     let (window, display) = glium::backend::glutin::SimpleWindowBuilder::new()

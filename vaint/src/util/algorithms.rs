@@ -152,3 +152,9 @@ pub fn write_ellipse_middle_point(centro: PixelCoord, rx: i32, ry: i32, puntos: 
         plot_elipse(x, y);
     }
 }
+
+/// Escribe al buffer dado los puntos que forman el relleno del objeto.
+pub fn flood_fill(outline_points: &[PixelCoord], buf: &mut Vec<PixelCoord>) {
+    let _ = (outline_points, buf); // Silenciar advertencias de variables no utilizadas
+    tracing::error!("`flood_fill` no está implementado");
+}
