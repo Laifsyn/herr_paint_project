@@ -12,6 +12,15 @@ pub enum SelectedItem {
     ShapeId(usize),
 }
 
+impl SelectedItem {
+    pub fn as_mut_usize(&mut self) -> Option<&mut usize> {
+        match self {
+            SelectedItem::None => None,
+            SelectedItem::ShapeId(id) => Some(id),
+        }
+    }
+}
+
 pub enum SliderEditor {
     /// Editando el color de fondo de la ventana.
     Background,
