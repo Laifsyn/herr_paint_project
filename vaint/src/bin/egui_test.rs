@@ -77,7 +77,7 @@ impl App for MiApp {
                 ui.add(egui::Slider::new(&mut self.grosor, 1.0..=50.0));
             });
             ui.group(|ui| {
-    ui.label("🟦 Figura seleccionada:");
+    ui.label(" Figura seleccionada:");
 
     ui.horizontal(|ui| {
         if ui.button("🔵 Círculo").clicked() {
