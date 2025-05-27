@@ -54,6 +54,15 @@ impl ShapeObject {
             DrawableShape::Rectangle(s) => &mut s.style,
         }
     }
+
+    pub fn shape_name(&self) -> &'static str {
+        match &self.shape {
+            DrawableShape::Square(_) => "Cuadrado",
+            DrawableShape::Circle(_) => "Círculo",
+            DrawableShape::Ellipse(_) => "Elipse",
+            DrawableShape::Rectangle(_) => "Rectángulo",
+        }
+    }
 }
 
 impl Shape for ShapeObject {
