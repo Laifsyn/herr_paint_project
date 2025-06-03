@@ -1,5 +1,26 @@
 use std::cell::RefCell;
+use std::fs;
 use std::rc::Rc;
+
+use serde::{Deserialize, Serialize};
+
+#[derive(Serialize, Deserialize)]
+struct Config {
+    color: [f32; 3],
+    figuras: Vec<String>,
+    grosor: f32,
+    transparente: bool,
+    cuadrado: u32,
+    centro_cuadrado: (i32, i32),
+    largoRectangulo: u32,
+    anchoRectangulo: u32,
+    centro_rectangulo: (i32, i32),
+    radio1Elipse: u32,
+    radio2Elipse: u32,
+    centro_elipse: (i32, i32),
+    radioCirculo: u32,
+    centro_circulo: (i32, i32),
+}
 
 pub use gl_window::GlWindow;
 
@@ -17,16 +38,49 @@ pub fn run_loop_standalone() {
         .with_title(GlWindow::WINDOW_TITLE)
         .with_inner_size(800, 600)
         .build(&event_loop);
-    let mut shapes = GlShapeList::new();
-    let center = (65, 60);
 
-    shapes.push(ShapeObject::new_circle(40, center));
-    shapes.push(ShapeObject::new_square(50, center));
-    shapes.push(ShapeObject::new_rectangle(60, 30, center));
+    let config: Config = serde_json::from_str(&fs::read_to_string("config.json").expect("No se pudo leer config.json"))
+        .expect("No se pudo deserializar config.json");
+
+    let r = (config.color[0] * 255.0) as u8;
+    let g = (config.color[1] * 255.0) as u8;
+    let b = (config.color[2] * 255.0) as u8;
+    let color_u32 = ((r as u32) << 16) | ((g as u32) << 8) | (b as u32);
+
+    let mut shapes = GlShapeList::new();
+    let center = (400, 300);
+
+    for figura in &config.figuras {
+        match figura.as_str() {
+            "Circulo" => {
+                let mut circle = ShapeObject::new_circle(config.radioCirculo, config.centro_circulo);
+                *circle.style_mut() =
+                    circle.style_mut().stroke_color(Color::from_u32_rgb(color_u32)).stroke_width(config.grosor as f32);
+                shapes.push(circle);
+            }
+            "Cuadrado" => {
+                let mut square = ShapeObject::new_square(config.cuadrado, config.centro_cuadrado);
+                *square.style_mut() =
+                    square.style_mut().stroke_color(Color::from_u32_rgb(color_u32)).stroke_width(config.grosor as f32);
+                shapes.push(square);
+            }
+            "Rectangulo" => {
+                let mut rectangle =
+                    ShapeObject::new_rectangle(config.anchoRectangulo, config.largoRectangulo, config.centro_rectangulo);
+                *rectangle.style_mut() =
+                    rectangle.style_mut().stroke_color(Color::from_u32_rgb(color_u32)).stroke_width(config.grosor as f32);
+                shapes.push(rectangle);
+            }
+            "Elipse" => {
+                let mut ellipse = ShapeObject::new_ellipse(config.radio1Elipse, config.radio2Elipse, config.centro_elipse);
+                *ellipse.style_mut() =
+                    ellipse.style_mut().stroke_color(Color::from_u32_rgb(color_u32)).stroke_width(config.grosor as f32);
+                shapes.push(ellipse);
+            }
+            _ => {}
+        }
+    }
     // Editar configuracion de estilo
-    let mut ellipse = ShapeObject::new_ellipse(33, 55, center);
-    *ellipse.style_mut() = ellipse.style_mut().stroke_color(Color::from_u32_rgb(0x00ff00)).stroke_width(2.0);
-    shapes.push(ellipse);
 
     let shapes_list = Rc::new(RefCell::new(shapes));
     let mut this = GlWindow { program: None, display, window, shapes_list, background_color: Color::from_u32_rgb(0x3367af) };
