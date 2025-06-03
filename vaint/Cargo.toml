@@ -18,6 +18,9 @@ name = "lab_05_pmc"
 name = "lab_05_pmc_2"
 [[bin]]
 name = "lab_06_pme"
+[[bin]]
+name = "opengl_app"
+path = "src/opengl_app.rs"
 
 [dependencies]
 glium = "0.36.0"
@@ -28,6 +31,8 @@ image = "0.25.6"
 tracing.workspace = true
 tracing-subscriber = { workspace = true, features = ["env-filter"] }
 eframe = "0.31.1"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
 
 [lints]
 workspace = true
