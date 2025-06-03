@@ -1,0 +1,17 @@
+{
+  "color": [0.2, 0.5, 0.8],
+  "centro": [400, 300],
+  "figuras": ["Circulo", "Rectangulo"],
+  "grosor": 5.0,
+  "transparente": false,
+  "cuadrado": 0.0,
+  "centro_cuadrado": [100, 100],
+  "largoRectangulo": 80,
+  "anchoRectangulo": 40,
+  "centro_rectangulo": [200, 150],
+  "radio1Elipse": 60,
+  "radio2Elipse": 30,
+  "centro_elipse": [300, 200],
+  "radioCirculo": 40,
+  "centro_circulo": [400, 300]
+}
