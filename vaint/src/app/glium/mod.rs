@@ -6,7 +6,8 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
 struct Config {
-    color: [f32; 3],
+    color: [u8; 3],
+    background_color: [u8; 3],
     figuras: Vec<String>,
     grosor: f32,
     transparente: bool,
@@ -42,39 +43,52 @@ pub fn run_loop_standalone() {
     let config: Config = serde_json::from_str(&fs::read_to_string("config.json").expect("No se pudo leer config.json"))
         .expect("No se pudo deserializar config.json");
 
-    let r = (config.color[0] * 255.0) as u8;
-    let g = (config.color[1] * 255.0) as u8;
-    let b = (config.color[2] * 255.0) as u8;
-    let color_u32 = ((r as u32) << 16) | ((g as u32) << 8) | (b as u32);
+    let r = (config.color[0]) as u8;
+    let g = (config.color[1]) as u8;
+    let b = (config.color[2]) as u8;
+    let borde_color = ((r as u32) << 16) | ((g as u32) << 8) | (b as u32);
 
+    let [r, g, b] = config.background_color;
+    let background = Color::from_rgb(r, g, b);
     let mut shapes = GlShapeList::new();
-    let center = (400, 300);
 
     for figura in &config.figuras {
         match figura.as_str() {
             "Circulo" => {
                 let mut circle = ShapeObject::new_circle(config.radioCirculo, config.centro_circulo);
-                *circle.style_mut() =
-                    circle.style_mut().stroke_color(Color::from_u32_rgb(color_u32)).stroke_width(config.grosor as f32);
+                *circle.style_mut() = circle
+                    .style_mut()
+                    .stroke_color(Color::from_u32_rgb(borde_color))
+                    .stroke_width(config.grosor as f32)
+                    .fill_color(background);
                 shapes.push(circle);
             }
             "Cuadrado" => {
                 let mut square = ShapeObject::new_square(config.cuadrado, config.centro_cuadrado);
-                *square.style_mut() =
-                    square.style_mut().stroke_color(Color::from_u32_rgb(color_u32)).stroke_width(config.grosor as f32);
+                *square.style_mut() = square
+                    .style_mut()
+                    .stroke_color(Color::from_u32_rgb(borde_color))
+                    .stroke_width(config.grosor as f32)
+                    .fill_color(background);
                 shapes.push(square);
             }
             "Rectangulo" => {
                 let mut rectangle =
                     ShapeObject::new_rectangle(config.anchoRectangulo, config.largoRectangulo, config.centro_rectangulo);
-                *rectangle.style_mut() =
-                    rectangle.style_mut().stroke_color(Color::from_u32_rgb(color_u32)).stroke_width(config.grosor as f32);
+                *rectangle.style_mut() = rectangle
+                    .style_mut()
+                    .stroke_color(Color::from_u32_rgb(borde_color))
+                    .stroke_width(config.grosor as f32)
+                    .fill_color(background);
                 shapes.push(rectangle);
             }
             "Elipse" => {
                 let mut ellipse = ShapeObject::new_ellipse(config.radio1Elipse, config.radio2Elipse, config.centro_elipse);
-                *ellipse.style_mut() =
-                    ellipse.style_mut().stroke_color(Color::from_u32_rgb(color_u32)).stroke_width(config.grosor as f32);
+                *ellipse.style_mut() = ellipse
+                    .style_mut()
+                    .stroke_color(Color::from_u32_rgb(borde_color))
+                    .stroke_width(config.grosor as f32)
+                    .fill_color(background);
                 shapes.push(ellipse);
             }
             _ => {}
@@ -83,6 +97,6 @@ pub fn run_loop_standalone() {
     // Editar configuracion de estilo
 
     let shapes_list = Rc::new(RefCell::new(shapes));
-    let mut this = GlWindow { program: None, display, window, shapes_list, background_color: Color::from_u32_rgb(0x3367af) };
+    let mut this = GlWindow { program: None, display, window, shapes_list, background_color: Color::from_u32_rgb(0xffffff) };
     event_loop.run_app(&mut this).unwrap();
 }

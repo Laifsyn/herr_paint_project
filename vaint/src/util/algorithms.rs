@@ -155,6 +155,28 @@ pub fn write_ellipse_middle_point(centro: PixelCoord, rx: i32, ry: i32, puntos: 
 
 /// Escribe al buffer dado los puntos que forman el relleno del objeto.
 pub fn flood_fill(outline_points: &[PixelCoord], buf: &mut Vec<PixelCoord>) {
-    let _ = (outline_points, buf); // Silenciar advertencias de variables no utilizadas
-    tracing::error!("`flood_fill` no está implementado");
+    use itertools::Itertools;
+
+    let copied_outline = outline_points.iter().sorted_by_key(|(_, y)| *y).collect::<Vec<_>>();
+    let bottom_y = copied_outline.last().unwrap().1;
+    for &(_, y) in copied_outline.iter().copied() {
+        if y > bottom_y {
+            break;
+        }
+        #[rustfmt::skip]
+        let Some((min, max)) =
+            copied_outline.iter()
+            .filter(|(_, current_y)| *current_y == y)
+            .map(|(x, _)| *x)
+            .minmax()
+            .into_option()
+        else {
+            tracing::error!("Unexpected None");
+            continue;
+        };
+
+        buf.extend((min + 1..max).map(|x| (x, y)));
+        buf.sort_unstable();
+        buf.dedup();
+    }
 }
