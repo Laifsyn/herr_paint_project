@@ -19,7 +19,7 @@ use_small_heuristics = "Max"
 # Unstable features below
 unstable_features = true
 style_edition = "2024"
-max_width = 80
+max_width = 130
 # code can be 100 characters, why not comments?
 comment_width = 100
 # force contributors to follow the formatting requirement
@@ -32,7 +32,7 @@ format_macro_matchers = true       ## Format the metavariable matching patterns 
 ## Wraps string when it overflows max_width
 format_strings = true
 # better grepping
-imports_granularity = "Crate"
+imports_granularity = "Module"
 # quicker manual lookup
 group_imports = "StdExternalCrate"
 # why use an attribute if a normal doc comment would suffice?
