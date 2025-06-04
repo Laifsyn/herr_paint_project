@@ -1,6 +1,7 @@
-use eframe::{App, Frame, egui};
-mod opengl_app;
 use std::fs;
+
+use eframe::{App, Frame, egui};
+use vaint::{Color, Figura};
 
 #[derive(PartialEq)]
 enum ColorObjetivo {
@@ -9,17 +10,11 @@ enum ColorObjetivo {
     Fondo,
 }
 
-#[derive(Debug, PartialEq, Clone)]
-enum Figura {
-    Circulo,
-    Rectangulo,
-    Elipse,
-    Cuadrado,
-}
-
 struct MiApp {
-    stroke_color: [u8; 3],
-    shape_background: [u8; 3],
+    stroke_color: Color,
+    shape_background: Color,
+    /// Fondo de la pantalla de glium.
+    screen_background: Color,
     grosor: f32,
     objetivo_color: ColorObjetivo,
     cuadrado: u32,
@@ -38,7 +33,7 @@ struct MiApp {
 impl Default for MiApp {
     fn default() -> Self {
         Self {
-            stroke_color: [0; 3],
+            stroke_color: Color::from_u32_rgb(0x333333),
             grosor: 5.0,
             objetivo_color: ColorObjetivo::Borde,
             cuadrado: 50,
@@ -52,7 +47,8 @@ impl Default for MiApp {
             radio_circulo: 50,
             centro_circulo: (300, 300),
             figuras_seleccionadas: vec![],
-            shape_background: Default::default(),
+            shape_background: Color::from_u32_rgb(0xffffff),
+            screen_background: Color::from_u32_rgb(0xffffff),
         }
     }
 }
@@ -63,12 +59,9 @@ impl App for MiApp {
             let [r, g, b] = match &self.objetivo_color {
                 ColorObjetivo::Borde => &mut self.stroke_color,
                 ColorObjetivo::Relleno => &mut self.shape_background,
-                ColorObjetivo::Fondo => {
-                    tracing::error!("Defaulting to stroke color for Fondo de Pantalla");
-                    self.objetivo_color = ColorObjetivo::Borde;
-                    &mut self.stroke_color
-                }
-            };
+                ColorObjetivo::Fondo => &mut self.screen_background,
+            }
+            .as_mut_slice();
             ui.horizontal(|ui| {
                 ui.label("R:");
                 ui.add(egui::Slider::new(r, 0..=u8::MAX));
@@ -172,8 +165,8 @@ impl App for MiApp {
             if ui.button("🗑️ Iniciar Tablero").clicked() {
                 // Guarda la configuración actual
                 let config = vaint::Config {
-                    color: self.stroke_color,
-                    figuras: self.figuras_seleccionadas.iter().map(|f| format!("{:?}", f)).collect(),
+                    stroke_color: self.stroke_color,
+                    figuras: self.figuras_seleccionadas.clone(),
                     grosor: self.grosor,
                     cuadrado: self.cuadrado,
                     centro_cuadrado: self.centro_cuadrado,
@@ -185,11 +178,16 @@ impl App for MiApp {
                     centro_elipse: self.centro_elipse,
                     radio_circulo: self.radio_circulo,
                     centro_circulo: self.centro_circulo,
-                    background_color: self.shape_background,
+                    shape_background_color: self.shape_background,
+                    background_color: self.screen_background,
                 };
                 fs::write("config.json", serde_json::to_string(&config).unwrap()).unwrap();
 
                 println!("Lanzando ventana OpenGL como proceso externo...");
+                // la aplicación de OpenGL y Eframe ambos hacen uso de winit::event_loop::EventLoop, por lo que no
+                // es posible ejecutar la ventana de OpenGL en otro hilo.
+                //
+                // https://docs.rs/winit/latest/winit/event_loop/struct.EventLoopBuilder.html#method.build
                 let _ = std::process::Command::new("opengl_app.exe").spawn();
             }
         });
@@ -197,6 +195,7 @@ impl App for MiApp {
 }
 
 fn main() {
+    vaint::tracing::init();
     tracing::info!("Vaint OpenGL App is running...");
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default().with_inner_size([495.0, 405.0]).with_position(egui::pos2(700.0, 350.0)),

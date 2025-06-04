@@ -1,7 +1,8 @@
 use eframe::egui::{self, Color32};
+use serde::{Deserialize, Serialize};
 
 /// Representación de un color RGB-8bits.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
 pub struct Color(pub [u8; 3]);
 
 impl Color {

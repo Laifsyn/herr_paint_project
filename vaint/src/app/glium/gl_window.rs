@@ -1,6 +1,3 @@
-use std::cell::RefCell;
-use std::rc::Rc;
-
 use glium::index::{NoIndices, PrimitiveType};
 use glium::winit::application::ApplicationHandler;
 use glium::{Display, DrawParameters, Surface, uniform};
@@ -15,7 +12,7 @@ pub struct GlWindow {
     pub display: glium::Display<WindowSurface>,
     pub window: glium::winit::window::Window,
     /// Lista de Objetos a dibujar
-    pub shapes_list: Rc<RefCell<GlShapeList>>,
+    pub shapes_list: GlShapeList,
     pub background_color: Color,
 }
 
@@ -42,7 +39,7 @@ impl GlWindow {
             ],
         };
 
-        let outline_points = Self::generate_shapes(&self.shapes_list.borrow(), (screen_width as i32, screen_height as i32));
+        let outline_points = Self::generate_shapes(&self.shapes_list, (screen_width as i32, screen_height as i32));
 
         // Dibujar el relleno de las figuras
         for (outlines, style) in outline_points.iter().filter(|(_, s)| s.fill_color.is_some()) {

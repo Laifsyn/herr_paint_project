@@ -5,8 +5,6 @@ use serde::{Deserialize, Serialize};
 
 #[path = "util/algorithms.rs"]
 pub mod algorithms;
-#[path = "app/egui/mod.rs"]
-pub mod egui_app;
 pub mod geometries;
 #[path = "app/glium/mod.rs"]
 pub mod glium_app;
@@ -15,11 +13,12 @@ mod opengl;
 #[path = "util/tracing.rs"]
 pub mod tracing;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Deserialize, Serialize)]
 pub struct Config {
-    pub color: [u8; 3],
-    pub background_color: [u8; 3],
-    pub figuras: Vec<String>,
+    pub stroke_color: Color,
+    pub shape_background_color: Color,
+    pub background_color: Color,
+    pub figuras: Vec<Figura>,
     pub grosor: f32,
     pub cuadrado: u32,
     pub centro_cuadrado: (i32, i32),
@@ -31,4 +30,13 @@ pub struct Config {
     pub centro_elipse: (i32, i32),
     pub radio_circulo: u32,
     pub centro_circulo: (i32, i32),
+}
+
+#[derive(Deserialize, Serialize)]
+#[derive(Debug, PartialEq, Clone)]
+pub enum Figura {
+    Circulo,
+    Rectangulo,
+    Elipse,
+    Cuadrado,
 }
