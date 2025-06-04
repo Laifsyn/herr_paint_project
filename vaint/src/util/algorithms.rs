@@ -157,6 +157,10 @@ pub fn write_ellipse_middle_point(centro: PixelCoord, rx: i32, ry: i32, puntos: 
 pub fn flood_fill(outline_points: &[PixelCoord], buf: &mut Vec<PixelCoord>) {
     use itertools::Itertools;
 
+    if outline_points.is_empty() {
+        return;
+    }
+
     let copied_outline = outline_points.iter().sorted_by_key(|(_, y)| *y).collect::<Vec<_>>();
     let bottom_y = copied_outline.last().unwrap().1;
     for &(_, y) in copied_outline.iter().copied() {

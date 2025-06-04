@@ -1,33 +1,6 @@
-// use eframe::Result;
-// use vaint::egui_app;
 use eframe::{App, Frame, egui};
 mod opengl_app;
 use std::fs;
-
-use serde::{Deserialize, Serialize};
-
-#[derive(Serialize, Deserialize)]
-struct Config {
-    color: [u8; 3],
-    background_color: [u8; 3],
-    figuras: Vec<String>,
-    grosor: f32,
-    transparente: bool,
-    cuadrado: u32,
-    centro_cuadrado: (i32, i32),
-    largoRectangulo: u32,
-    anchoRectangulo: u32,
-    centro_rectangulo: (i32, i32),
-    radio1Elipse: u32,
-    radio2Elipse: u32,
-    centro_elipse: (i32, i32),
-    radioCirculo: u32,
-    centro_circulo: (i32, i32),
-}
-/*fn main() {
-    vaint::tracing::init();
-    vaint::glium_app::run_loop_standalone();
-}*/
 
 #[derive(PartialEq)]
 enum ColorObjetivo {
@@ -40,7 +13,6 @@ enum ColorObjetivo {
 enum Figura {
     Circulo,
     Rectangulo,
-    Triangulo,
     Elipse,
     Cuadrado,
 }
@@ -49,18 +21,16 @@ struct MiApp {
     stroke_color: [u8; 3],
     shape_background: [u8; 3],
     grosor: f32,
-    figura: Figura,
     objetivo_color: ColorObjetivo,
-    transparente: bool,
-    Cuadrado: u32,
+    cuadrado: u32,
     centro_cuadrado: (i32, i32),
-    largoRectangulo: u32,
-    anchoRectangulo: u32,
+    largo_rectangulo: u32,
+    ancho_rectangulo: u32,
     centro_rectangulo: (i32, i32),
-    radio1Elipse: u32,
-    radio2Elipse: u32,
+    radio1_elipse: u32,
+    radio2_elipse: u32,
     centro_elipse: (i32, i32),
-    radioCirculo: u32,
+    radio_circulo: u32,
     centro_circulo: (i32, i32),
     figuras_seleccionadas: Vec<Figura>,
 }
@@ -70,18 +40,16 @@ impl Default for MiApp {
         Self {
             stroke_color: [0; 3],
             grosor: 5.0,
-            figura: Figura::Circulo,
             objetivo_color: ColorObjetivo::Borde,
-            transparente: false,
-            Cuadrado: 50,
+            cuadrado: 50,
             centro_cuadrado: (300, 300),
-            largoRectangulo: 60,
-            anchoRectangulo: 30,
+            largo_rectangulo: 60,
+            ancho_rectangulo: 30,
             centro_rectangulo: (300, 300),
-            radio1Elipse: 20,
-            radio2Elipse: 30,
+            radio1_elipse: 20,
+            radio2_elipse: 30,
             centro_elipse: (300, 300),
-            radioCirculo: 50,
+            radio_circulo: 50,
             centro_circulo: (300, 300),
             figuras_seleccionadas: vec![],
             shape_background: Default::default(),
@@ -115,16 +83,13 @@ impl App for MiApp {
             });
             let color = egui::Color32::from_rgb(*r, *g, *b);
 
-            if ui.add(egui::Button::new("                   ").fill(color)).clicked() {}
+            ui.add(egui::Button::new("                   ").fill(color));
 
             ui.horizontal(|ui| {
                 ui.radio_value(&mut self.objetivo_color, ColorObjetivo::Borde, "Borde");
                 ui.radio_value(&mut self.objetivo_color, ColorObjetivo::Relleno, "Relleno");
                 ui.radio_value(&mut self.objetivo_color, ColorObjetivo::Fondo, "Fondo de Pantalla");
             });
-
-            // Checkbox de transparencia
-            ui.checkbox(&mut self.transparente, "¿Transparente?");
 
             ui.horizontal(|ui: &mut egui::Ui| {
                 ui.label("Grosor:");
@@ -137,7 +102,7 @@ impl App for MiApp {
                         Figura::Circulo => {
                             ui.horizontal(|ui| {
                                 ui.label("Radio (Círculo):");
-                                ui.add(egui::DragValue::new(&mut self.radioCirculo));
+                                ui.add(egui::DragValue::new(&mut self.radio_circulo));
                                 ui.label("Centro X:");
                                 ui.add(egui::DragValue::new(&mut self.centro_circulo.0));
                                 ui.label("Centro Y:");
@@ -147,7 +112,7 @@ impl App for MiApp {
                         Figura::Cuadrado => {
                             ui.horizontal(|ui| {
                                 ui.label("Lado (Cuadrado):");
-                                ui.add(egui::DragValue::new(&mut self.Cuadrado));
+                                ui.add(egui::DragValue::new(&mut self.cuadrado));
                                 ui.label("Centro X:");
                                 ui.add(egui::DragValue::new(&mut self.centro_cuadrado.0));
                                 ui.label("Centro Y:");
@@ -157,9 +122,9 @@ impl App for MiApp {
                         Figura::Rectangulo => {
                             ui.horizontal(|ui| {
                                 ui.label("Largo (Rectángulo):");
-                                ui.add(egui::DragValue::new(&mut self.largoRectangulo));
+                                ui.add(egui::DragValue::new(&mut self.largo_rectangulo));
                                 ui.label("Ancho:");
-                                ui.add(egui::DragValue::new(&mut self.anchoRectangulo));
+                                ui.add(egui::DragValue::new(&mut self.ancho_rectangulo));
                                 ui.label("Centro X:");
                                 ui.add(egui::DragValue::new(&mut self.centro_rectangulo.0));
                                 ui.label("Centro Y:");
@@ -169,16 +134,15 @@ impl App for MiApp {
                         Figura::Elipse => {
                             ui.horizontal(|ui| {
                                 ui.label("Radio 1 (Elipse):");
-                                ui.add(egui::DragValue::new(&mut self.radio1Elipse));
+                                ui.add(egui::DragValue::new(&mut self.radio1_elipse));
                                 ui.label("Radio 2:");
-                                ui.add(egui::DragValue::new(&mut self.radio2Elipse));
+                                ui.add(egui::DragValue::new(&mut self.radio2_elipse));
                                 ui.label("Centro X:");
                                 ui.add(egui::DragValue::new(&mut self.centro_elipse.0));
                                 ui.label("Centro Y:");
                                 ui.add(egui::DragValue::new(&mut self.centro_elipse.1));
                             });
                         }
-                        _ => {}
                     }
                 }
             });
@@ -205,36 +169,21 @@ impl App for MiApp {
                 ui.label(format!("Figuras actuales: {:?}", self.figuras_seleccionadas));
             });
 
-            ui.horizontal(|ui| {
-                if ui.button("🗑️ Borrar tablero").clicked() {
-                    // acción temporal (aún no implementada)
-                    println!("Se presionó el botón de borrar.");
-                    let color = if self.transparente {
-                        egui::Color32::from_rgba_unmultiplied(
-                            0, 0, 0, 0, // completamente transparente
-                        )
-                    } else {
-                        egui::Color32::from_rgb(*r, *g, *b)
-                    };
-                }
-            });
-
             if ui.button("🗑️ Iniciar Tablero").clicked() {
                 // Guarda la configuración actual
-                let config = Config {
+                let config = vaint::Config {
                     color: self.stroke_color,
                     figuras: self.figuras_seleccionadas.iter().map(|f| format!("{:?}", f)).collect(),
                     grosor: self.grosor,
-                    transparente: self.transparente,
-                    cuadrado: self.Cuadrado,
+                    cuadrado: self.cuadrado,
                     centro_cuadrado: self.centro_cuadrado,
-                    largoRectangulo: self.largoRectangulo,
-                    anchoRectangulo: self.anchoRectangulo,
+                    largo_rectangulo: self.largo_rectangulo,
+                    ancho_rectangulo: self.ancho_rectangulo,
                     centro_rectangulo: self.centro_rectangulo,
-                    radio1Elipse: self.radio1Elipse,
-                    radio2Elipse: self.radio2Elipse,
+                    radio1_elipse: self.radio1_elipse,
+                    radio2_elipse: self.radio2_elipse,
                     centro_elipse: self.centro_elipse,
-                    radioCirculo: self.radioCirculo,
+                    radio_circulo: self.radio_circulo,
                     centro_circulo: self.centro_circulo,
                     background_color: self.shape_background,
                 };

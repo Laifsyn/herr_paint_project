@@ -154,7 +154,6 @@ fn elipse_punto_medio(centro: Point, rx: i32, ry: i32) -> Vec<Point> {
         plot_elipse(x, y);
     }
 
-    let (x0, x) = (puntos.iter().min_by_key(|s| s.0).unwrap().0, puntos.iter().max_by_key(|s| s.0).unwrap().0);
     puntos
 }
 
