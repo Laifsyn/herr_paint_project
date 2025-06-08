@@ -81,7 +81,7 @@ impl Shape for ShapeObject {
 ///
 /// # Elemeto Privado
 ///
-/// Revisar [`ShapeObject`](crate::ShapeObject) para más detalles.
+/// Revisar [`ShapeObject`] para más detalles.
 enum DrawableShape {
     Square(Square),
     Rectangle(Square),
